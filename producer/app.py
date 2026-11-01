@@ -1,6 +1,10 @@
 from fastapi import FastAPI
 from models.response import ResponseModel
 from models.request import RequestModel
+import requests
+from dotenv import load_dotenv
+import os
+load_dotenv()
 
 app = FastAPI()
 
@@ -11,4 +15,9 @@ async def read_root():
 
 @app.post("/submit")
 async def submit_data(RequestModel: RequestModel):
-    return ResponseModel(status="success", message=f"Received message: {RequestModel.message} from producer: {RequestModel.producer}")
+    #connect to the microdervice at 8003 with endpoint /submitJob and send the data to it
+    response = requests.post(f"{os.getenv('SERVER_URL')}/submitJob", json=RequestModel.model_dump())
+    if response.status_code != 200:
+        return ResponseModel(status="error", message=f"Failed to submit data to microservice: {response.text}")
+    else:
+        return ResponseModel(status="success", message=f"Data submitted to microservice: {response.text}")
